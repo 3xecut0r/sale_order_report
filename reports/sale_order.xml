@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <template id="x_report_saleorder_inherited" inherit_id="sale.report_saleorder_document" primary="True">
+        <xpath expr="//table[hasclass('table')]" position="attributes">
+            <attribute name="t-if">False</attribute>
+        </xpath>
+        <xpath expr="//div[@name='so_total_summary']" position="attributes">
+            <attribute name="t-if">False</attribute>
+        </xpath>
+        <xpath expr="//h2" position="attributes">
+            <attribute name="t-if">False</attribute>
+        </xpath>
+        <xpath expr="//h2" position="after">
+            <h2>Sale Order Report</h2>
+        </xpath>
+        <xpath expr="//table[hasclass('table')]" position="before">
+            <t t-foreach="docs" t-as="o">
+                <table class="table table-sm mt-3">
+                    <thead>
+                        <tr>
+                            <th>Order Number</th>
+                            <th>Order Date</th>
+                            <th>Customer</th>
+                            <th>Country</th>
+                            <th>Product</th>
+                            <th>Currency</th>
+                            <th>Quantity</th>
+                            <th>Local Currency Value (Excl. Tax)</th>
+                            <th>GBP Value (Excl. Tax)</th>
+                            <th>Local Currency Price (Excl. Tax)</th>
+                            <th>GBP Price (Excl. Tax)</th>
+                            <th>GBP Cost</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr t-foreach="o.order_line" t-as="line">
+                            <td><span t-field="o.name"/></td>
+                            <td><span t-out="o.date_order" t-options='{"widget": "date"}'/></td>
+                            <td><span t-field="o.partner_id.name"/></td>
+                            <td><span t-field="o.partner_id.country_id.name"/></td>
+                            <td><span t-field="line.product_id.display_name"/></td>
+                            <td><span t-field="o.currency_id.name"/></td>
+                            <td><span t-field="line.product_uom_qty" t-options='{"widget": "integer"}'/></td>
+                            <td><span t-field="line.price_subtotal"/></td>
+                            <td>
+                                <span t-esc="line.currency_id._convert(line.price_subtotal,
+                                    o.company_id.currency_id.search([('name', '=', 'GBP')], limit=1),
+                                    o.company_id,
+                                    o.date_order)"/>
+                            </td>
+                            <td><span t-field="line.price_unit"/></td>
+                            <td>
+                                <span t-esc="line.currency_id._convert(line.price_unit,
+                                    o.company_id.currency_id.search([('name', '=', 'GBP')], limit=1),
+                                    o.company_id,
+                                    o.date_order)"/>
+                            </td>
+                            <td><span t-field="line.product_id.standard_price"/></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </t>
+        </xpath>
+
+    </template>
+
+    <template id="x_report_saleorder_raw">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-call="sale_order_report.x_report_saleorder_inherited" t-lang="doc.partner_id.lang"/>
+            </t>
+        </t>
+    </template>
+
+    <record id="action_report_saleorder_inherited" model="ir.actions.report">
+        <field name="name">Sale Order Report</field>
+        <field name="model">sale.order</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">sale_order_report.x_report_saleorder_raw</field>
+        <field name="report_file">sale_order_report.x_report_saleorder_raw</field>
+        <field name="print_report_name">(object.state in (
+            'draft', 'sent') and 'Quotation - %s' % object.name) or 'Order - %s' % object.name</field>
+        <field name="binding_model_id" ref="sale.model_sale_order"/>
+        <field name="binding_type">report</field>
+    </record>
+</odoo>
